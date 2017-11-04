@@ -78,11 +78,29 @@ public class MainSongFragment extends Fragment {
                              Bundle savedInstanceState) {
 
         View view = inflater.inflate(R.layout.fragment_main_song,container,false);
-        ButterKnife.bind(this,view);
+        setmainUI(view);
         EventBus.getDefault().register(this);
         setUI(view);
         return view;
     }
+
+    private void setmainUI(View view) {
+        ButterKnife.bind(this,view);
+        toolbar.setNavigationIcon(R.drawable.ic_arrow_back_black_24dp);
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                getActivity().onBackPressed();
+            }
+        });
+        fabPlay.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                MusicHandle.playPause();
+            }
+        });
+    }
+
     @Subscribe(sticky = true)
     public void onReceiveTopSong(OnTopSongEvent onTopSongEvent){
         topSongModel = onTopSongEvent.getTopSongModel();
@@ -94,20 +112,8 @@ public class MainSongFragment extends Fragment {
         MusicHandle.updateRealTime(sbPlay,fabPlay,ivPlaySong,tvTimeStart,tvTimeEnd);
 
     }
+
     private void setUI(View view) {
-        toolbar.setNavigationIcon(R.drawable.ic_arrow_back_black_24dp);
-        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                getActivity().onBackPressed();
-            }
-        });
-        fabPlay.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-               MusicHandle.playPause();
-            }
-        });
         File[] files =  getContext().getExternalFilesDir("").listFiles();
         for (File file : files){
             TopSongModel topSongModelp = Utils.convertSong(file.getName(),file.getAbsolutePath());
