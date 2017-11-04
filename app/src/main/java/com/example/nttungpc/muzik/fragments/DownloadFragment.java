@@ -29,7 +29,7 @@ public class DownloadFragment extends Fragment {
     private static final String TAG = "";
     @BindView(R.id.rv_download)
     RecyclerView rvDownloadSong;
-    private List<TopSongModel> topSongModels = new ArrayList<>();
+    public List<TopSongModel> topSongModels = new ArrayList<>();
     TopSongAdapter topSongAdapter;
     public DownloadFragment() {
         // Required empty public constructor

@@ -19,6 +19,7 @@ import com.example.nttungpc.muzik.R;
 import com.example.nttungpc.muzik.database.TopSongModel;
 import com.example.nttungpc.muzik.events.OnTopSongEvent;
 import com.example.nttungpc.muzik.utils.MusicHandle;
+import com.example.nttungpc.muzik.utils.Utils;
 import com.squareup.picasso.Picasso;
 import com.thin.downloadmanager.DefaultRetryPolicy;
 import com.thin.downloadmanager.DownloadRequest;
@@ -27,6 +28,10 @@ import com.thin.downloadmanager.ThinDownloadManager;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -61,6 +66,8 @@ public class MainSongFragment extends Fragment {
     @BindView(R.id.tb)
     android.support.v7.widget.Toolbar toolbar;
     private TopSongModel topSongModel;
+    public List<TopSongModel> topSongModels = new ArrayList<>();
+    private Boolean isExisted = false;
 
     public MainSongFragment() {
         // Required empty public constructor
@@ -71,8 +78,9 @@ public class MainSongFragment extends Fragment {
                              Bundle savedInstanceState) {
 
         View view = inflater.inflate(R.layout.fragment_main_song,container,false);
-        setUI(view);
+        ButterKnife.bind(this,view);
         EventBus.getDefault().register(this);
+        setUI(view);
         return view;
     }
     @Subscribe(sticky = true)
@@ -84,9 +92,9 @@ public class MainSongFragment extends Fragment {
                 .transform(new CropCircleTransformation())
                 .into(ivPlaySong);
         MusicHandle.updateRealTime(sbPlay,fabPlay,ivPlaySong,tvTimeStart,tvTimeEnd);
+
     }
     private void setUI(View view) {
-        ButterKnife.bind(this,view);
         toolbar.setNavigationIcon(R.drawable.ic_arrow_back_black_24dp);
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
@@ -100,35 +108,52 @@ public class MainSongFragment extends Fragment {
                MusicHandle.playPause();
             }
         });
-
+        File[] files =  getContext().getExternalFilesDir("").listFiles();
+        for (File file : files){
+            TopSongModel topSongModelp = Utils.convertSong(file.getName(),file.getAbsolutePath());
+            if (topSongModelp != null){
+                topSongModels.add(topSongModelp);
+            }
+        }
+        for (TopSongModel topSong : topSongModels){
+            if (topSong.getSong().equals(topSongModel.getSong()) && topSong.getArtist().equals(topSongModel.getArtist())){
+                isExisted = true;
+            }
+        }
+        if (isExisted){
+            ivDownload.setImageAlpha(100);
+        }
         ivDownload.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                ThinDownloadManager downloadManager = new ThinDownloadManager();
-                Uri downloadUri = Uri.parse(topSongModel.getUrl());
-                Uri destinationUri = Uri.parse(getContext().getExternalFilesDir("") + "/" + topSongModel.getSong()+ "-" +topSongModel.getArtist()+ ".mp3");
-                DownloadRequest downloadRequest = new DownloadRequest(downloadUri)
-                        .setRetryPolicy(new DefaultRetryPolicy())
-                        .setDestinationURI(destinationUri)
-                        .setPriority(DownloadRequest.Priority.HIGH)
-                        .setDownloadContext("Download")
-                        .setDownloadListener(new DownloadStatusListener() {
-                            @Override
-                            public void onDownloadComplete(int id) {
+                if (!isExisted){
+                    ThinDownloadManager downloadManager = new ThinDownloadManager();
+                    Uri downloadUri = Uri.parse(topSongModel.getUrl());
+                    Uri destinationUri = Uri.parse(getContext().getExternalFilesDir("") + "/" + topSongModel.getSong()+ "-" +topSongModel.getArtist()+ ".mp3");
+                    DownloadRequest downloadRequest = new DownloadRequest(downloadUri)
+                            .setRetryPolicy(new DefaultRetryPolicy())
+                            .setDestinationURI(destinationUri)
+                            .setPriority(DownloadRequest.Priority.HIGH)
+                            .setDownloadContext("Download")
+                            .setDownloadListener(new DownloadStatusListener() {
+                                @Override
+                                public void onDownloadComplete(int id) {
+                                    Toast.makeText(getContext(), "Download Completed", Toast.LENGTH_SHORT).show();
+                                }
 
-                            }
+                                @Override
+                                public void onDownloadFailed(int id, int errorCode, String errorMessage) {
 
-                            @Override
-                            public void onDownloadFailed(int id, int errorCode, String errorMessage) {
+                                }
 
-                            }
+                                @Override
+                                public void onProgress(int id, long totalBytes, long downloadedBytes, int progress) {
 
-                            @Override
-                            public void onProgress(int id, long totalBytes, long downloadedBytes, int progress) {
-
-                            }
-                        });
-                downloadManager.add(downloadRequest);
+                                }
+                            });
+                    downloadManager.add(downloadRequest);
+                    ivDownload.setImageAlpha(100);
+                }
             }
         });
     }
